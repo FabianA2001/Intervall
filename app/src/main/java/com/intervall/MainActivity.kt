@@ -56,19 +56,12 @@ class MainActivity : ComponentActivity() {
                     modifier = Modifier
                         .fillMaxSize()
                 ) {
-                    AndroidView(
-                        factory = {
-                            VideoView(it, null).apply {
-                                setVideoURI("android.resource://$packageName/${R.raw.sample}".toUri())
-                                start()
-                            }
-                        },
-                        modifier = Modifier
+                    Text(
+                        "Test", modifier = Modifier
                             .fillMaxWidth()
                             .onGloballyPositioned {
                                 videoViewBounds = it.boundsInWindow().toAndroidRect()
-                            }
-                    )
+                            })
 
                     Spacer(modifier = Modifier.height(16.dp))
 
@@ -96,25 +89,7 @@ class MainActivity : ComponentActivity() {
     private fun updatedPipParams(): PictureInPictureParams? {
         return PictureInPictureParams.Builder()
             .setSourceRectHint(videoViewBounds)
-            .setAspectRatio(Rational(16, 9))
-            .setActions(
-                listOf(
-                    RemoteAction(
-                        Icon.createWithResource(
-                            applicationContext,
-                            R.drawable.ic_android_black_24dp
-                        ),
-                        "Baby changing station",
-                        "Baby changing station",
-                        PendingIntent.getBroadcast(
-                            applicationContext,
-                            0,
-                            Intent(applicationContext, MyReceiver::class.java),
-                            PendingIntent.FLAG_IMMUTABLE
-                        )
-                    )
-                )
-            )
+            .setAspectRatio(Rational(4, 3))
             .build()
     }
 }
