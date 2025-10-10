@@ -21,9 +21,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
@@ -40,12 +37,29 @@ import kotlinx.coroutines.launch
 import java.util.Locale
 
 //A class to save and share the running state of the timer
-class TimerViewModel : ViewModel() {
+class TimerViewModel(initSeconds: Int = 0) : ViewModel() {
     private val _isRunning = MutableStateFlow(true)
+    private val _seconds = MutableStateFlow(initSeconds)
     val isRunning = _isRunning.asStateFlow()
+    val seconds = _seconds.asStateFlow()
 
     fun toggleRunning() {
         _isRunning.value = !_isRunning.value
+    }
+
+    fun reduceSeconds(by: Int) {
+        _seconds.value = (_seconds.value - by).coerceAtLeast(0)
+    }
+}
+
+// Factory zum Übergeben von Argumenten an das ViewModel
+class TimerViewModelFactory(private val initSeconds: Int) : ViewModelProvider.Factory {
+    override fun <T : ViewModel> create(modelClass: Class<T>): T {
+        if (modelClass.isAssignableFrom(TimerViewModel::class.java)) {
+            @Suppress("UNCHECKED_CAST")
+            return TimerViewModel(initSeconds) as T
+        }
+        throw IllegalArgumentException("Unknown ViewModel class")
     }
 }
 
@@ -99,7 +113,12 @@ class Timer : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        val viewModel: TimerViewModel = ViewModelProvider(this)[TimerViewModel::class.java]
+        // Init-Argument aus dem Intent (Fallback 0 Sekunden)
+        val initSeconds = intent?.getIntExtra("timeInSeconds", 0) ?: 0
+        val viewModel: TimerViewModel = ViewModelProvider(
+            this,
+            TimerViewModelFactory(initSeconds)
+        )[TimerViewModel::class.java]
         TimerStateHolder.viewModel = viewModel
         setContent {
             IntervallTheme {
@@ -108,7 +127,8 @@ class Timer : ComponentActivity() {
                         .fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
-                    TimerScreen(intent.getIntExtra("timeInSeconds", -1), viewModel)
+                    TimerScreen(viewModel)
+//                    intent.getIntExtra("timeInSeconds", -1)
                 }
             }
         }
@@ -134,24 +154,23 @@ class Timer : ComponentActivity() {
 
 @Composable
 fun TimerScreen(
-    paraTimeInSeconds: Int = 0,
     viewModel: TimerViewModel = androidx.lifecycle.viewmodel.compose.viewModel()
 ) {
 
-    var timeInSeconds by rememberSaveable { mutableStateOf(paraTimeInSeconds) }
     val isRunning by viewModel.isRunning.collectAsState()
+    val seconds by viewModel.seconds.collectAsState()
 
     // Timer countdown logic
-    LaunchedEffect(isRunning) {
-        while (isRunning && timeInSeconds > 0) {
+    LaunchedEffect(isRunning, seconds) {
+        while (isRunning && seconds > 0) {
             delay(1000L)
-            timeInSeconds--
+            viewModel.reduceSeconds(1)
         }
     }
 
     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
         Text(
-            text = formatTime(timeInSeconds),
+            text = formatTime(seconds),
             fontSize = 64.sp,
             fontWeight = FontWeight.Light,
             color = MaterialTheme.colorScheme.onBackground
