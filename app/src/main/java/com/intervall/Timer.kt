@@ -30,10 +30,13 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
 import com.intervall.ui.theme.IntervallTheme
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.launch
 import java.util.Locale
 
 class TimerViewModel : ViewModel() {
@@ -49,7 +52,6 @@ class Timer : ComponentActivity() {
 
     class MyReceiver : BroadcastReceiver() {
         override fun onReceive(context: Context, intent: Intent?) {
-            // Zugriff auf ViewModel z. B. über ein Singleton oder Dependency Injection
             TimerStateHolder.viewModel?.toggleRunning()
         }
     }
@@ -65,30 +67,40 @@ class Timer : ComponentActivity() {
         )
     }
 
+    private fun buildPipParams(isRunning: Boolean): PictureInPictureParams {
+        val iconRes =
+            if (isRunning) R.drawable.baseline_pause_24 else R.drawable.baseline_play_arrow_24
+        val title = if (isRunning) "Pause" else "Play"
+        val description = title
 
-    private fun updatedPipParams(): PictureInPictureParams? {
+        val toggleIntent = PendingIntent.getBroadcast(
+            applicationContext,
+            0,
+            Intent(applicationContext, MyReceiver::class.java),
+            PendingIntent.FLAG_IMMUTABLE
+        )
+
         return PictureInPictureParams.Builder()
             .setAspectRatio(Rational(4, 3))
             .setActions(
                 listOf(
                     RemoteAction(
-                        Icon.createWithResource(
-                            applicationContext,
-                            R.drawable.baseline_play_arrow_24
-                        ),
-                        "play",
-                        "play",
-                        PendingIntent.getBroadcast(
-                            applicationContext,
-                            0,
-                            Intent(applicationContext, MyReceiver::class.java),
-                            PendingIntent.FLAG_IMMUTABLE
-                        )
+                        Icon.createWithResource(applicationContext, iconRes),
+                        title,
+                        description,
+                        toggleIntent
                     )
                 )
             )
             .build()
     }
+
+//    // Bestehende Methode durch neue ersetzt/umbenannt für Klarheit
+//    private fun updatedPipParams(): PictureInPictureParams? {
+//        // Fallback auf aktuellen State, falls ViewModel bereits vorhanden ist
+//        val running = TimerStateHolder.viewModel?.isRunning?.value ?: true
+//        return buildPipParams(running)
+//    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -105,9 +117,21 @@ class Timer : ComponentActivity() {
                 }
             }
         }
+
+        // PiP initial mit korrektem Icon betreten
         if (isPipSupported) {
-            updatedPipParams()?.let { params ->
-                enterPictureInPictureMode(params)
+            val initialParams = buildPipParams(viewModel.isRunning.value)
+            enterPictureInPictureMode(initialParams)
+        }
+
+        // Bei jeder Änderung von isRunning die PiP-Actions aktualisieren
+        lifecycleScope.launch {
+            repeatOnLifecycle(androidx.lifecycle.Lifecycle.State.STARTED) {
+                viewModel.isRunning.collect { running ->
+                    if (isPipSupported) {
+                        setPictureInPictureParams(buildPipParams(running))
+                    }
+                }
             }
         }
     }
