@@ -1,8 +1,13 @@
 package com.intervall
 
+import android.app.PendingIntent
 import android.app.PictureInPictureParams
+import android.app.RemoteAction
+import android.content.BroadcastReceiver
+import android.content.Context
+import android.content.Intent
 import android.content.pm.PackageManager
-import android.graphics.Rect
+import android.graphics.drawable.Icon
 import android.os.Bundle
 import android.util.Rational
 import androidx.activity.ComponentActivity
@@ -20,28 +25,49 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.toAndroidRect
-import androidx.compose.ui.layout.boundsInWindow
-import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
 import com.intervall.ui.theme.IntervallTheme
 import kotlinx.coroutines.delay
 import java.util.Locale
 
+
 class Timer : ComponentActivity() {
+
+    class MyReceiver : BroadcastReceiver() {
+        override fun onReceive(context: Context, intent: Intent?) {
+            println("Clicked on PIP action")
+        }
+    }
+
     private val isPipSupported by lazy {
         packageManager.hasSystemFeature(
             PackageManager.FEATURE_PICTURE_IN_PICTURE
         )
     }
 
-    private var videoViewBounds = Rect()
 
     private fun updatedPipParams(): PictureInPictureParams? {
         return PictureInPictureParams.Builder()
-            .setSourceRectHint(videoViewBounds)
             .setAspectRatio(Rational(4, 3))
+            .setActions(
+                listOf(
+                    RemoteAction(
+                        Icon.createWithResource(
+                            applicationContext,
+                            R.drawable.baseline_play_arrow_24
+                        ),
+                        "play",
+                        "play",
+                        PendingIntent.getBroadcast(
+                            applicationContext,
+                            0,
+                            Intent(applicationContext, MyReceiver::class.java),
+                            PendingIntent.FLAG_IMMUTABLE
+                        )
+                    )
+                )
+            )
             .build()
     }
 
@@ -51,10 +77,7 @@ class Timer : ComponentActivity() {
             IntervallTheme {
                 Surface(
                     modifier = Modifier
-                        .fillMaxSize()
-                        .onGloballyPositioned {
-                            videoViewBounds = it.boundsInWindow().toAndroidRect()
-                        },
+                        .fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
                     TimerScreen(intent.getIntExtra("timeInSeconds", -1))

@@ -10,6 +10,8 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/Theme.Intervall">
+        <receiver android:name=".Timer$MyReceiver" />
+
         <activity
             android:name=".MainActivity"
             android:exported="true"
