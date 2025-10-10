@@ -19,6 +19,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -27,17 +28,35 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.ViewModelProvider
 import com.intervall.ui.theme.IntervallTheme
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import java.util.Locale
 
+class TimerViewModel : ViewModel() {
+    private val _isRunning = MutableStateFlow(true)
+    val isRunning = _isRunning.asStateFlow()
+
+    fun toggleRunning() {
+        _isRunning.value = !_isRunning.value
+    }
+}
 
 class Timer : ComponentActivity() {
 
     class MyReceiver : BroadcastReceiver() {
         override fun onReceive(context: Context, intent: Intent?) {
-            println("Clicked on PIP action")
+            // Zugriff auf ViewModel z. B. über ein Singleton oder Dependency Injection
+            TimerStateHolder.viewModel?.toggleRunning()
         }
+    }
+
+    // einfache Singleton-Hilfe:
+    object TimerStateHolder {
+        var viewModel: TimerViewModel? = null
     }
 
     private val isPipSupported by lazy {
@@ -73,6 +92,8 @@ class Timer : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        val viewModel: TimerViewModel = ViewModelProvider(this)[TimerViewModel::class.java]
+        TimerStateHolder.viewModel = viewModel
         setContent {
             IntervallTheme {
                 Surface(
@@ -80,7 +101,7 @@ class Timer : ComponentActivity() {
                         .fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
-                    TimerScreen(intent.getIntExtra("timeInSeconds", -1))
+                    TimerScreen(intent.getIntExtra("timeInSeconds", -1), viewModel)
                 }
             }
         }
@@ -93,20 +114,22 @@ class Timer : ComponentActivity() {
 }
 
 @Composable
-fun TimerScreen(paraTimeInSeconds: Int = 0) {
+fun TimerScreen(
+    paraTimeInSeconds: Int = 0,
+    viewModel: TimerViewModel = androidx.lifecycle.viewmodel.compose.viewModel()
+) {
+
     var timeInSeconds by rememberSaveable { mutableStateOf(paraTimeInSeconds) }
-    var isRunning by rememberSaveable { mutableStateOf(true) }
+    val isRunning by viewModel.isRunning.collectAsState()
 
     LaunchedEffect(isRunning) {
-        while (isRunning) {
+        while (isRunning && timeInSeconds > 0) {
             delay(1000L)
             timeInSeconds--
         }
     }
-    Box(
-        modifier = Modifier.fillMaxSize(),
-        contentAlignment = Alignment.Center
-    ) {
+
+    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
         Text(
             text = formatTime(timeInSeconds),
             fontSize = 64.sp,
