@@ -39,6 +39,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import java.util.Locale
 
+//A class to save and share the running state of the timer
 class TimerViewModel : ViewModel() {
     private val _isRunning = MutableStateFlow(true)
     val isRunning = _isRunning.asStateFlow()
@@ -49,7 +50,8 @@ class TimerViewModel : ViewModel() {
 }
 
 class Timer : ComponentActivity() {
-
+    // Receiver für die PiP-Action:
+    // Toggle running state im ViewModel based on button
     class MyReceiver : BroadcastReceiver() {
         override fun onReceive(context: Context, intent: Intent?) {
             TimerStateHolder.viewModel?.toggleRunning()
@@ -95,13 +97,6 @@ class Timer : ComponentActivity() {
             .build()
     }
 
-//    // Bestehende Methode durch neue ersetzt/umbenannt für Klarheit
-//    private fun updatedPipParams(): PictureInPictureParams? {
-//        // Fallback auf aktuellen State, falls ViewModel bereits vorhanden ist
-//        val running = TimerStateHolder.viewModel?.isRunning?.value ?: true
-//        return buildPipParams(running)
-//    }
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         val viewModel: TimerViewModel = ViewModelProvider(this)[TimerViewModel::class.java]
@@ -118,13 +113,13 @@ class Timer : ComponentActivity() {
             }
         }
 
-        // PiP initial mit korrektem Icon betreten
+        // init PiP with current state
         if (isPipSupported) {
             val initialParams = buildPipParams(viewModel.isRunning.value)
             enterPictureInPictureMode(initialParams)
         }
 
-        // Bei jeder Änderung von isRunning die PiP-Actions aktualisieren
+        // update Icon in PiP when state changes
         lifecycleScope.launch {
             repeatOnLifecycle(androidx.lifecycle.Lifecycle.State.STARTED) {
                 viewModel.isRunning.collect { running ->
@@ -146,6 +141,7 @@ fun TimerScreen(
     var timeInSeconds by rememberSaveable { mutableStateOf(paraTimeInSeconds) }
     val isRunning by viewModel.isRunning.collectAsState()
 
+    // Timer countdown logic
     LaunchedEffect(isRunning) {
         while (isRunning && timeInSeconds > 0) {
             delay(1000L)
