@@ -13,7 +13,9 @@ import android.util.Rational
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.height
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -24,6 +26,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
@@ -37,27 +40,39 @@ import kotlinx.coroutines.launch
 import java.util.Locale
 
 //A class to save and share the running state of the timer
-class TimerViewModel(initSeconds: Int = 0) : ViewModel() {
+class TimerViewModel(_secondsList: ArrayList<Int>) : ViewModel() {
+    private val secondsList = _secondsList.ifEmpty { listOf(-1) }
     private val _isRunning = MutableStateFlow(true)
-    private val _seconds = MutableStateFlow(initSeconds)
     val isRunning = _isRunning.asStateFlow()
+    private val _indexSeconds = MutableStateFlow(0)
+    val indexSeconds = _indexSeconds.asStateFlow()
+
+    private val _seconds = MutableStateFlow(secondsList[_indexSeconds.value])
     val seconds = _seconds.asStateFlow()
 
     fun toggleRunning() {
         _isRunning.value = !_isRunning.value
     }
 
+    fun nextSeconds() {
+        _seconds.value = secondsList.getOrElse(_indexSeconds.value++) { -1 }
+    }
+
     fun reduceSeconds(by: Int) {
         _seconds.value = (_seconds.value - by).coerceAtLeast(0)
     }
+
+    fun getSecondsByIndex(index: Int): Int {
+        return secondsList.getOrElse(index) { -1 }
+    }
 }
 
-// Factory zum Übergeben von Argumenten an das ViewModel
-class TimerViewModelFactory(private val initSeconds: Int) : ViewModelProvider.Factory {
+// Factory to pass arguments to the ViewModel
+class TimerViewModelFactory(private val secondsList: ArrayList<Int>) : ViewModelProvider.Factory {
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
         if (modelClass.isAssignableFrom(TimerViewModel::class.java)) {
             @Suppress("UNCHECKED_CAST")
-            return TimerViewModel(initSeconds) as T
+            return TimerViewModel(secondsList) as T
         }
         throw IllegalArgumentException("Unknown ViewModel class")
     }
@@ -114,10 +129,10 @@ class Timer : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         // Init-Argument aus dem Intent (Fallback 0 Sekunden)
-        val initSeconds = intent?.getIntExtra("timeInSeconds", 0) ?: 0
+        val secondsList = intent.getIntegerArrayListExtra("secondsList") ?: arrayListOf(-1)
         val viewModel: TimerViewModel = ViewModelProvider(
             this,
-            TimerViewModelFactory(initSeconds)
+            TimerViewModelFactory(secondsList)
         )[TimerViewModel::class.java]
         TimerStateHolder.viewModel = viewModel
         setContent {
@@ -128,7 +143,6 @@ class Timer : ComponentActivity() {
                     color = MaterialTheme.colorScheme.background
                 ) {
                     TimerScreen(viewModel)
-//                    intent.getIntExtra("timeInSeconds", -1)
                 }
             }
         }
@@ -159,12 +173,16 @@ fun TimerScreen(
 
     val isRunning by viewModel.isRunning.collectAsState()
     val seconds by viewModel.seconds.collectAsState()
+    val indexSeconds by viewModel.indexSeconds.collectAsState()
 
     // Timer countdown logic
     LaunchedEffect(isRunning, seconds) {
         while (isRunning && seconds > 0) {
             delay(1000L)
             viewModel.reduceSeconds(1)
+            if (seconds <= 1) {
+                viewModel.nextSeconds()
+            }
         }
     }
 
@@ -172,6 +190,13 @@ fun TimerScreen(
         Text(
             text = formatTime(seconds),
             fontSize = 64.sp,
+            fontWeight = FontWeight.Light,
+            color = MaterialTheme.colorScheme.onBackground
+        )
+        Spacer(modifier = Modifier.height(16.dp))
+        Text(
+            text = formatTime(viewModel.getSecondsByIndex(indexSeconds + 1)),
+            fontSize = 20.sp,
             fontWeight = FontWeight.Light,
             color = MaterialTheme.colorScheme.onBackground
         )
