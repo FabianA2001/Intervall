@@ -32,9 +32,57 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.intervall.ui.theme.IntervallTheme
 
+class TimeData {
+    private var aufwaermen: Int = 0
+    private var interval: Int = 0
+    private var pause: Int = 0
+    private var anzahl: Int = 0
+    private var auslaufen: Int = 0
+
+    fun setAufwaermen(seconds: Int): Unit {
+        aufwaermen = seconds
+    }
+
+    fun setInterval(seconds: Int) {
+        interval = seconds
+    }
+
+    fun setPause(seconds: Int) {
+        pause = seconds
+    }
+
+    fun setAnzahl(amount: Int) {
+        anzahl = amount
+    }
+
+    fun setAuslaufen(seconds: Int) {
+        auslaufen = seconds
+    }
+
+    fun getSecondsList(): List<Int> {
+        val list = mutableListOf<Int>()
+        if (aufwaermen > 0) {
+            list.add(aufwaermen)
+        }
+        for (i in 1..anzahl) {
+            if (interval > 0) {
+                list.add(interval)
+            }
+            if (pause > 0) {
+                list.add(pause)
+            }
+        }
+        if (auslaufen > 0) {
+            list.add(auslaufen)
+        }
+        return list
+    }
+}
+
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        var timeData = TimeData()
         setContent {
             IntervallTheme {
                 Column(
@@ -43,7 +91,7 @@ class MainActivity : ComponentActivity() {
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     Spacer(modifier = Modifier.height(32.dp))
-                    TimeInput("Aufwärmen") { }
+                    TimeInput("Aufwärmen", timeData.setAufwaermen) {}
                     TimeInput("Intervall") { }
                     TimeInput("Pause") { }
                     AmountInput("Anzahl") { }
