@@ -13,6 +13,7 @@ import android.util.Rational
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
@@ -55,7 +56,7 @@ class TimerViewModel(_secondsList: ArrayList<Int>) : ViewModel() {
     }
 
     fun nextSeconds() {
-        _seconds.value = secondsList.getOrElse(_indexSeconds.value++) { -1 }
+        _seconds.value = secondsList.getOrElse(++_indexSeconds.value) { -1 }
     }
 
     fun reduceSeconds(by: Int) {
@@ -187,19 +188,27 @@ fun TimerScreen(
     }
 
     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-        Text(
-            text = formatTime(seconds),
-            fontSize = 64.sp,
-            fontWeight = FontWeight.Light,
-            color = MaterialTheme.colorScheme.onBackground
-        )
-        Spacer(modifier = Modifier.height(16.dp))
-        Text(
-            text = formatTime(viewModel.getSecondsByIndex(indexSeconds + 1)),
-            fontSize = 20.sp,
-            fontWeight = FontWeight.Light,
-            color = MaterialTheme.colorScheme.onBackground
-        )
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            val mainText = if (seconds >= 0) formatTime(seconds) else "Fertig"
+            Text(
+                text = mainText,
+                fontSize = 64.sp,
+                fontWeight = FontWeight.Light,
+                color = MaterialTheme.colorScheme.onBackground
+            )
+            Spacer(modifier = Modifier.height(16.dp))
+            val nextSeconds = viewModel.getSecondsByIndex(indexSeconds + 1)
+            if (nextSeconds >= 0) {
+                Text(
+                    text = formatTime(nextSeconds),
+                    fontSize = 20.sp,
+                    fontWeight = FontWeight.Light,
+                    color = MaterialTheme.colorScheme.onBackground
+                )
+            }
+        }
     }
 }
 

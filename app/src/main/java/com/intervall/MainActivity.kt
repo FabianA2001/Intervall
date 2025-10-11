@@ -36,7 +36,7 @@ class MainActivity : ComponentActivity() {
                     Button(
                         onClick = {
                             val intent = Intent(this@MainActivity, Timer::class.java)
-                            val zahlenListe = listOf(10, 11, 12, 13)
+                            val zahlenListe = listOf(5, 6)
                             intent.putIntegerArrayListExtra(
                                 "secondsList",
                                 ArrayList(zahlenListe)
