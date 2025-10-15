@@ -22,7 +22,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
-import com.intervall.Timer.TimerStateHolder
+import com.intervall.TimerPiP.TimerStateHolder
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -83,6 +83,22 @@ fun TimerScreen(navController: NavController, secondsListString: String?) {
     )
 
     TimerStateHolder.viewModel = viewModel
+
+    val isRunning by viewModel.isRunning.collectAsState()
+    val seconds by viewModel.seconds.collectAsState()
+
+    // Timer countdown logic
+    LaunchedEffect(isRunning, seconds) {
+        while (isRunning && seconds > 0) {
+            delay(1000L)
+            viewModel.reduceSeconds(1)
+            if (seconds <= 1) {
+                viewModel.nextSeconds()
+            }
+        }
+    }
+
+
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
         Spacer(modifier = Modifier.height(20.dp))
         Timer(viewModel)
@@ -97,6 +113,16 @@ fun TimerScreen(navController: NavController, secondsListString: String?) {
         ) {
             Text("Stop Timer")
         }
+        Button(
+            onClick = {
+            },
+
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(32.dp)
+        ) {
+            Text("Start Pip")
+        }
     }
 }
 
@@ -105,21 +131,8 @@ fun Timer(
     viewModel: TimerViewModel = androidx.lifecycle.viewmodel.compose.viewModel()
 ) {
 
-    val isRunning by viewModel.isRunning.collectAsState()
     val seconds by viewModel.seconds.collectAsState()
     val indexSeconds by viewModel.indexSeconds.collectAsState()
-
-    // Timer countdown logic
-    LaunchedEffect(isRunning, seconds) {
-        while (isRunning && seconds > 0) {
-            delay(1000L)
-            viewModel.reduceSeconds(1)
-            if (seconds <= 1) {
-                viewModel.nextSeconds()
-            }
-        }
-    }
-
     Column(
         horizontalAlignment = Alignment.CenterHorizontally
     ) {

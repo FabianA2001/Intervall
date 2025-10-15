@@ -20,7 +20,7 @@ import androidx.compose.ui.Modifier
 import com.intervall.ui.theme.IntervallTheme
 
 
-class Timer : ComponentActivity() {
+class TimerPiP : ComponentActivity() {
     // Receiver für die PiP-Action:
     // Toggle running state im ViewModel based on button
     class MyReceiver : BroadcastReceiver() {
@@ -70,9 +70,7 @@ class Timer : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        // Init-Argument aus dem Intent (Fallback 0 Sekunden)
-        val secondsList = intent.getIntegerArrayListExtra("secondsList") ?: arrayListOf(-1)
-
+        val timerStateHoler: TimerStateHolder = TimerStateHolder
         setContent {
             IntervallTheme {
                 Surface(
