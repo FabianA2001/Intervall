@@ -6,13 +6,18 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -72,6 +77,7 @@ class TimerViewModelFactory(private val secondsList: ArrayList<Int>) : ViewModel
 @Composable
 fun TimerScreen(navController: NavController, secondsListString: String?) {
     val context = LocalContext.current
+    var showExitDialog by remember { mutableStateOf(false) }
 
     // Parse den String zurück zu einer Liste
     val secondsList = (secondsListString?.split(",")
@@ -99,6 +105,31 @@ fun TimerScreen(navController: NavController, secondsListString: String?) {
         }
     }
 
+    // Bestätigungsdialog
+    if (showExitDialog) {
+        AlertDialog(
+            onDismissRequest = { showExitDialog = false },
+            title = { Text("Timer beenden?") },
+            text = { Text("Möchtest du den Timer wirklich beenden?") },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        showExitDialog = false
+                        navController.popBackStack()
+                    }
+                ) {
+                    Text("Ja")
+                }
+            },
+            dismissButton = {
+                TextButton(
+                    onClick = { showExitDialog = false }
+                ) {
+                    Text("Abbrechen")
+                }
+            }
+        )
+    }
 
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
         Spacer(modifier = Modifier.height(20.dp))
@@ -112,7 +143,7 @@ fun TimerScreen(navController: NavController, secondsListString: String?) {
                 .fillMaxWidth()
                 .padding(32.dp)
         ) {
-            Text("Stop Timer")
+            Text(if (isRunning) "Pause Timer" else "Start Timer")
         }
         Button(
             onClick = {
@@ -125,6 +156,17 @@ fun TimerScreen(navController: NavController, secondsListString: String?) {
                 .padding(32.dp)
         ) {
             Text("Start Pip")
+        }
+        Button(
+            onClick = {
+                showExitDialog = true
+            },
+
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(32.dp)
+        ) {
+            Text("Exit Timer")
         }
     }
 }
