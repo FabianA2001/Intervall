@@ -39,8 +39,9 @@ class TimeData {
     private var anzahl: Int = 0
     private var auslaufen: Int = 0
 
-    fun setAufwaermen(seconds: Int): Unit {
+    fun setAufwaermen(seconds: Int) {
         aufwaermen = seconds
+        return
     }
 
     fun setInterval(seconds: Int) {
@@ -82,7 +83,7 @@ class TimeData {
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        var timeData = TimeData()
+        val timeData = TimeData()
         setContent {
             IntervallTheme {
                 Column(
@@ -91,16 +92,15 @@ class MainActivity : ComponentActivity() {
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     Spacer(modifier = Modifier.height(32.dp))
-                    TimeInput("Aufwärmen", timeData.setAufwaermen) {}
-                    TimeInput("Intervall") { }
-                    TimeInput("Pause") { }
-                    AmountInput("Anzahl") { }
-                    TimeInput("Auslaufen") { }
+                    TimeInput("Aufwärmen") { timeData.setAufwaermen(it) }
+                    TimeInput("Intervall") { timeData.setInterval(it) }
+                    TimeInput("Pause") { timeData.setPause(it) }
+                    AmountInput("Anzahl") { timeData.setAnzahl(it) }
+                    TimeInput("Auslaufen") { timeData.setAuslaufen(it) }
                     Button(
                         onClick = {
                             val intent = Intent(this@MainActivity, Timer::class.java)
-                            val zahlenListe =
-                                listOf(600, 60, 120, 60, 120, 60, 120, 60, 120, 60, 120, 60, 600)
+                            val zahlenListe = timeData.getSecondsList()
                             intent.putIntegerArrayListExtra(
                                 "secondsList",
                                 ArrayList(zahlenListe)
