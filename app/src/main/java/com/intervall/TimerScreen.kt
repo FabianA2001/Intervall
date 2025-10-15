@@ -12,18 +12,22 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 
 @Composable
-fun TimerScreen(navController: NavController) {
+fun TimerScreen(navController: NavController, secondsListString: String?) {
     val context = LocalContext.current
+
+    // Parse den String zurück zu einer Liste
+    val secondsList = secondsListString?.split(",")
+        ?.mapNotNull { it.toIntOrNull() }
+        ?: emptyList()
+
     Button(
         onClick = {
             val intent = Intent(context, Timer::class.java)
-            val zahlenListe = null
             intent.putIntegerArrayListExtra(
                 "secondsList",
-                ArrayList(zahlenListe)
+                ArrayList(secondsList)
             )
             context.startActivity(intent)
-
         },
 
         modifier = Modifier

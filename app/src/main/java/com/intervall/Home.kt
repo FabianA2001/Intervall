@@ -95,7 +95,11 @@ fun Home(navController: NavController) {
             AmountInput("Anzahl", defaultAmount = 2) { timeData.setAnzahl(it) }
             TimeInput("Auslaufen", defaultSec = 4) { timeData.setAuslaufen(it) }
             Button(
-                onClick = { navController.navigate("timer") },
+                onClick = {
+                    val secondsList = timeData.getSecondsList()
+                    val listString = secondsList.joinToString(",")
+                    navController.navigate("timer/$listString")
+                },
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(32.dp)
