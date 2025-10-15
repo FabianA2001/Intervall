@@ -12,10 +12,11 @@ import android.os.Bundle
 import android.util.Rational
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import com.intervall.ui.theme.IntervallTheme
 
@@ -70,7 +71,11 @@ class TimerPiP : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        val timerStateHoler: TimerStateHolder = TimerStateHolder
+        val viewModel: TimerViewModel = TimerStateHolder.viewModel ?: run {
+            // Kein ViewModel verfügbar, Activity beenden
+            finish()
+            return
+        }
         setContent {
             IntervallTheme {
                 Surface(
@@ -78,14 +83,16 @@ class TimerPiP : ComponentActivity() {
                         .fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
-                    Text("Test")
+                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        Timer(viewModel)
+                    }
                 }
             }
         }
 
         // init PiP with current state
         if (isPipSupported) {
-            val initialParams = buildPipParams(false)
+            val initialParams = buildPipParams(true)
             enterPictureInPictureMode(initialParams)
         }
 

@@ -1,5 +1,6 @@
 package com.intervall
 
+import android.content.Intent
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -115,6 +116,8 @@ fun TimerScreen(navController: NavController, secondsListString: String?) {
         }
         Button(
             onClick = {
+                val intent = Intent(context, TimerPiP::class.java)
+                context.startActivity(intent)
             },
 
             modifier = Modifier
@@ -128,7 +131,7 @@ fun TimerScreen(navController: NavController, secondsListString: String?) {
 
 @Composable
 fun Timer(
-    viewModel: TimerViewModel = androidx.lifecycle.viewmodel.compose.viewModel()
+    viewModel: TimerViewModel
 ) {
 
     val seconds by viewModel.seconds.collectAsState()
