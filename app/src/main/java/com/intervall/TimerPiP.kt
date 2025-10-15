@@ -18,7 +18,10 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
 import com.intervall.ui.theme.IntervallTheme
+import kotlinx.coroutines.launch
 
 
 class TimerPiP : ComponentActivity() {
@@ -92,19 +95,19 @@ class TimerPiP : ComponentActivity() {
 
         // init PiP with current state
         if (isPipSupported) {
-            val initialParams = buildPipParams(true)
+            val initialParams = buildPipParams(viewModel.isRunning.value)
             enterPictureInPictureMode(initialParams)
         }
 
-//        // update Icon in PiP when state changes
-//        lifecycleScope.launch {
-//            repeatOnLifecycle(androidx.lifecycle.Lifecycle.State.STARTED) {
-//                viewModel.isRunning.collect { running ->
-//                    if (isPipSupported) {
-//                        setPictureInPictureParams(buildPipParams(running))
-//                    }
-//                }
-//            }
-//        }
+        // update Icon in PiP when state changes
+        lifecycleScope.launch {
+            repeatOnLifecycle(androidx.lifecycle.Lifecycle.State.STARTED) {
+                viewModel.isRunning.collect { running ->
+                    if (isPipSupported) {
+                        setPictureInPictureParams(buildPipParams(running))
+                    }
+                }
+            }
+        }
     }
 }
