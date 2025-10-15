@@ -141,7 +141,7 @@ fun TimerScreen(navController: NavController, secondsListString: String?) {
 
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(32.dp)
+                .padding(20.dp)
         ) {
             Text(if (isRunning) "Pause Timer" else "Start Timer")
         }
@@ -153,7 +153,7 @@ fun TimerScreen(navController: NavController, secondsListString: String?) {
 
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(32.dp)
+                .padding(20.dp)
         ) {
             Text("Start Pip")
         }
@@ -164,7 +164,7 @@ fun TimerScreen(navController: NavController, secondsListString: String?) {
 
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(32.dp)
+                .padding(20.dp)
         ) {
             Text("Exit Timer")
         }
