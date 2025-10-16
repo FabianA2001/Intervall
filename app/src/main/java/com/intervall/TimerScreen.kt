@@ -1,8 +1,9 @@
 package com.intervall
 
-import android.content.Intent
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -12,6 +13,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -28,7 +30,6 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
-import com.intervall.TimerPiP.TimerStateHolder
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -77,7 +78,9 @@ class TimerViewModelFactory(private val secondsList: ArrayList<Int>) : ViewModel
 @Composable
 fun TimerScreen(navController: NavController, secondsListString: String?) {
     val context = LocalContext.current
+    val activity = context as? MainActivity
     var showExitDialog by remember { mutableStateOf(false) }
+    var isInPipMode by remember { mutableStateOf(false) }
 
     // Parse den String zurück zu einer Liste
     val secondsList = (secondsListString?.split(",")
@@ -89,10 +92,25 @@ fun TimerScreen(navController: NavController, secondsListString: String?) {
         factory = TimerViewModelFactory(secondsList)
     )
 
-    TimerStateHolder.viewModel = viewModel
+    // ViewModel in MainActivity registrieren und PiP-Callback setzen
+    DisposableEffect(viewModel) {
+        MainActivity.setTimerViewModel(viewModel)
+        MainActivity.setPipModeCallback { isInPip ->
+            isInPipMode = isInPip
+        }
+        onDispose {
+            MainActivity.setTimerViewModel(null)
+            MainActivity.setPipModeCallback(null)
+        }
+    }
 
     val isRunning by viewModel.isRunning.collectAsState()
     val seconds by viewModel.seconds.collectAsState()
+
+    // PiP-Parameter aktualisieren wenn sich der Running-State ändert
+    LaunchedEffect(isRunning) {
+        activity?.updatePipParams(isRunning)
+    }
 
     // Timer countdown logic
     LaunchedEffect(isRunning, seconds) {
@@ -131,42 +149,49 @@ fun TimerScreen(navController: NavController, secondsListString: String?) {
         )
     }
 
-    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-        Spacer(modifier = Modifier.height(20.dp))
-        Timer(viewModel)
-        Button(
-            onClick = {
-                viewModel.toggleRunning()
-            },
-
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(20.dp)
+    // Im PiP-Modus nur den Timer anzeigen
+    if (isInPipMode) {
+        Box(
+            modifier = Modifier.fillMaxSize(),
+            contentAlignment = Alignment.Center
         ) {
-            Text(if (isRunning) "Pause Timer" else "Start Timer")
+            Timer(viewModel)
         }
-        Button(
-            onClick = {
-                val intent = Intent(context, TimerPiP::class.java)
-                context.startActivity(intent)
-            },
-
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(20.dp)
-        ) {
-            Text("Start Pip")
-        }
-        Button(
-            onClick = {
-                showExitDialog = true
-            },
-
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(20.dp)
-        ) {
-            Text("Exit Timer")
+    } else {
+        // Normaler Modus mit allen Buttons
+        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            Spacer(modifier = Modifier.height(20.dp))
+            Timer(viewModel)
+            Button(
+                onClick = {
+                    viewModel.toggleRunning()
+                },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(20.dp)
+            ) {
+                Text(if (isRunning) "Pause Timer" else "Start Timer")
+            }
+            Button(
+                onClick = {
+                    activity?.enterPip()
+                },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(20.dp)
+            ) {
+                Text("Start PiP")
+            }
+            Button(
+                onClick = {
+                    showExitDialog = true
+                },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(20.dp)
+            ) {
+                Text("Exit Timer")
+            }
         }
     }
 }
@@ -188,9 +213,9 @@ fun Timer(
             fontWeight = FontWeight.Light,
             color = MaterialTheme.colorScheme.onBackground
         )
-        Spacer(modifier = Modifier.height(16.dp))
         val nextSeconds = viewModel.getSecondsByIndex(indexSeconds + 1)
         if (nextSeconds >= 0) {
+            Spacer(modifier = Modifier.height(16.dp))
             Text(
                 text = formatTime(nextSeconds),
                 fontSize = 20.sp,
