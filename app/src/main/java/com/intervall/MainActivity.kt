@@ -44,6 +44,7 @@ class MainActivity : ComponentActivity() {
 
     private val timerReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context, intent: Intent?) {
+            println("Hallo Test")
             if (intent?.action == ACTION_TOGGLE_TIMER) {
                 currentTimerViewModel?.toggleRunning()
             }
@@ -107,18 +108,22 @@ class MainActivity : ComponentActivity() {
         }
         val title = if (isRunning) "Pause" else "Play"
 
-        val toggleIntent = PendingIntent.getBroadcast(
+        val toggleIntent = Intent(ACTION_TOGGLE_TIMER).apply {
+            setPackage(packageName)
+        }
+
+        val pendingIntent = PendingIntent.getBroadcast(
             this,
             0,
-            Intent(ACTION_TOGGLE_TIMER),
-            PendingIntent.FLAG_IMMUTABLE
+            toggleIntent,
+            PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
         )
 
         val remoteAction = RemoteAction(
             Icon.createWithResource(this, iconRes),
             title,
             title,
-            toggleIntent
+            pendingIntent
         )
 
         return PictureInPictureParams.Builder()
