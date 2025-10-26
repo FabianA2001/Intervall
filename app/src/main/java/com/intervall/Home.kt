@@ -89,11 +89,11 @@ fun Home(navController: NavController) {
     val settingsRepository = remember { SettingsRepository(context) }
     val scope = rememberCoroutineScope()
 
-    val aufwaermen by settingsRepository.aufwaermen.collectAsState(initial = 5)
-    val interval by settingsRepository.interval.collectAsState(initial = 2)
-    val pause by settingsRepository.pause.collectAsState(initial = 3)
-    val anzahl by settingsRepository.anzahl.collectAsState(initial = 2)
-    val auslaufen by settingsRepository.auslaufen.collectAsState(initial = 4)
+    val aufwaermen by settingsRepository.aufwaermen.collectAsState(initial = 600)
+    val interval by settingsRepository.interval.collectAsState(initial = 120)
+    val pause by settingsRepository.pause.collectAsState(initial = 180)
+    val anzahl by settingsRepository.anzahl.collectAsState(initial = 4)
+    val auslaufen by settingsRepository.auslaufen.collectAsState(initial = 600)
 
     val timeData = TimeData()
 
