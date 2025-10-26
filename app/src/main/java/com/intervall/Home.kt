@@ -16,18 +16,22 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.intervall.ui.theme.IntervallTheme
+import kotlinx.coroutines.launch
 
 
 class TimeData {
@@ -81,7 +85,18 @@ class TimeData {
 
 @Composable
 fun Home(navController: NavController) {
+    val context = LocalContext.current
+    val settingsRepository = remember { SettingsRepository(context) }
+    val scope = rememberCoroutineScope()
+
+    val aufwaermen by settingsRepository.aufwaermen.collectAsState(initial = 5)
+    val interval by settingsRepository.interval.collectAsState(initial = 2)
+    val pause by settingsRepository.pause.collectAsState(initial = 3)
+    val anzahl by settingsRepository.anzahl.collectAsState(initial = 2)
+    val auslaufen by settingsRepository.auslaufen.collectAsState(initial = 4)
+
     val timeData = TimeData()
+
     IntervallTheme {
         Column(
             modifier = Modifier
@@ -89,11 +104,26 @@ fun Home(navController: NavController) {
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Spacer(modifier = Modifier.height(32.dp))
-            TimeInput("Aufwärmen", defaultSec = 5) { timeData.setAufwaermen(it) }
-            TimeInput("Intervall", defaultSec = 2) { timeData.setInterval(it) }
-            TimeInput("Pause", defaultSec = 3) { timeData.setPause(it) }
-            AmountInput("Anzahl", defaultAmount = 2) { timeData.setAnzahl(it) }
-            TimeInput("Auslaufen", defaultSec = 4) { timeData.setAuslaufen(it) }
+            TimeInput("Aufwärmen", defaultSec = aufwaermen) {
+                timeData.setAufwaermen(it)
+                scope.launch { settingsRepository.saveAufwaermen(it) }
+            }
+            TimeInput("Intervall", defaultSec = interval) {
+                timeData.setInterval(it)
+                scope.launch { settingsRepository.saveInterval(it) }
+            }
+            TimeInput("Pause", defaultSec = pause) {
+                timeData.setPause(it)
+                scope.launch { settingsRepository.savePause(it) }
+            }
+            AmountInput("Anzahl", defaultAmount = anzahl) {
+                timeData.setAnzahl(it)
+                scope.launch { settingsRepository.saveAnzahl(it) }
+            }
+            TimeInput("Auslaufen", defaultSec = auslaufen) {
+                timeData.setAuslaufen(it)
+                scope.launch { settingsRepository.saveAuslaufen(it) }
+            }
             Button(
                 onClick = {
                     val secondsList = timeData.getSecondsList()
@@ -117,6 +147,11 @@ fun AmountInput(
     onTimeChange: (totalSeconds: Int) -> Unit = {}
 ) {
     var amount by remember { mutableStateOf(defaultAmount.toString()) }
+
+    // Update amount when defaultAmount changes
+    LaunchedEffect(defaultAmount) {
+        amount = defaultAmount.toString()
+    }
 
     // Gesamtzeit in Sekunden berechnen und zurückgeben
     LaunchedEffect(amount) {
@@ -160,6 +195,13 @@ fun TimeInput(
 ) {
     var minutes by remember { mutableStateOf(defaultMin.toString()) }
     var seconds by remember { mutableStateOf(defaultSec.toString()) }
+
+    // Update seconds when defaultSec changes
+    LaunchedEffect(defaultSec) {
+        val totalSeconds = defaultSec
+        minutes = (totalSeconds / 60).toString()
+        seconds = (totalSeconds % 60).toString()
+    }
 
     // Gesamtzeit in Sekunden berechnen und zurückgeben
     LaunchedEffect(minutes, seconds) {
