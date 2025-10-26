@@ -12,6 +12,7 @@
         android:theme="@style/Theme.Intervall">
         <activity
             android:name=".MainActivity"
+            android:configChanges="screenSize|smallestScreenSize|screenLayout|orientation"
             android:exported="true"
             android:label="@string/app_name"
             android:supportsPictureInPicture="true"
